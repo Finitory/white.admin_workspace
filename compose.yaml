@@ -1,0 +1,55 @@
+
+name: white-admin-workspace
+
+services:
+  admin-front:
+    image: blue.admin_front:local
+    build:
+      context: ../blue.admin_front
+    ports:
+      - "127.0.0.1:11000:8080"
+    networks:
+      - admin-local
+
+  admin-bff:
+    image: blue.admin_bff:local
+    build:
+      context: ../blue.admin_bff
+    environment:
+      NODE_ENV: production
+      PORT: "12000"
+    ports:
+      - "127.0.0.1:12000:12000"
+    networks:
+      - admin-local
+
+  admin-gateway:
+    image: blue.admin_gateway:local
+    build:
+      context: ../blue.admin_gateway
+    ports:
+      - "127.0.0.1:12100:12100"
+    networks:
+      - admin-local
+
+  admin-auth:
+    image: blue.admin_auth:local
+    build:
+      context: ../blue.admin_auth
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    volumes:
+      - type: bind
+        source: ${AUTH_DEV_CONFIG:?Set AUTH_DEV_CONFIG}
+        target: /app/config/application-dev.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - "127.0.0.1:12200:12200"
+    networks:
+      - admin-local
+
+networks:
+  admin-local:
+    driver: bridge
