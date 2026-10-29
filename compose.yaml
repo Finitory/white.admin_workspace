@@ -6,6 +6,15 @@ services:
     image: blue.admin_front:local
     build:
       context: ../blue.admin_front
+      args:
+        VITE_LOCAL_CONNECTIVITY_ENABLED: "true"
+    volumes:
+      - type: bind
+        source: ../blue.admin_front/nginx/local.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+        bind:
+          create_host_path: false
     ports:
       - "127.0.0.1:11000:8080"
     networks:
@@ -18,6 +27,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: "12000"
+      BLUE_LOCAL_CONNECTIVITY_ENABLED: "true"
+      CONNECTIVITY_GATEWAY_URL: http://admin-gateway:12100
     ports:
       - "127.0.0.1:12000:12000"
     networks:
@@ -27,6 +38,10 @@ services:
     image: blue.admin_gateway:local
     build:
       context: ../blue.admin_gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      CONNECTIVITY_MOCK_URL: http://admin-mock:8080
+      CONNECTIVITY_AUTH_URL: http://admin-auth:12200
     ports:
       - "127.0.0.1:12100:12100"
     networks:
@@ -47,6 +62,13 @@ services:
           create_host_path: false
     ports:
       - "127.0.0.1:12200:12200"
+    networks:
+      - admin-local
+
+  admin-mock:
+    image: nginxinc/nginx-unprivileged:stable-bookworm
+    volumes:
+      - ./mock/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - admin-local
 
