@@ -1,4 +1,3 @@
-
 name: white-admin-workspace
 
 services:
@@ -72,6 +71,44 @@ services:
     networks:
       - admin-local
 
+  postgres:
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_bootstrap_password
+    secrets:
+      - pg_bootstrap_password
+      - admin_auth_migration_password
+      - admin_auth_runtime_password
+    ports:
+      - "127.0.0.1:15432:5432"
+    volumes:
+      - admin_auth_pgdata:/var/lib/postgresql
+      - ./scripts/postgres/10-init-admin-auth.sh:/docker-entrypoint-initdb.d/10-init-admin-auth.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - admin-local
+
+
+volumes:
+  admin_auth_pgdata:
+
 networks:
   admin-local:
     driver: bridge
+
+secrets:
+  pg_bootstrap_password:
+    file: ./secrets/pg_bootstrap_password
+
+  admin_auth_migration_password:
+    file: ./secrets/admin_auth_migration_password
+
+  admin_auth_runtime_password:
+    file: ./secrets/admin_auth_runtime_password
